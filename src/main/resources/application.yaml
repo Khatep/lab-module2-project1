@@ -15,14 +15,13 @@ spring:
     show-sql: true
     open-in-view: false
 
+feign:
+  clients:
+    kaspi-lab:
+      delivery-service: localhost:8081
+
 server:
   port: 8080
   servlet:
     context-path: /
 
-logging:
-  level:
-    root: INFO
-    org.springframework.web: INFO
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

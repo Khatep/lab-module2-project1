@@ -1,14 +1,23 @@
 package org.kaspi.labmodule2project1.services.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import feign.FeignException;
 import lombok.RequiredArgsConstructor;
+import org.kaspi.labmodule2project1.clients.DeliveryServiceClient;
 import org.kaspi.labmodule2project1.domain.dto.ProductDto;
+import org.kaspi.labmodule2project1.domain.dto.request.CreateDeliveryForProductRequestDto;
 import org.kaspi.labmodule2project1.domain.exceptions.ProductNotFoundException;
+import org.kaspi.labmodule2project1.domain.models.OutboxEvent;
 import org.kaspi.labmodule2project1.domain.models.Product;
 import org.kaspi.labmodule2project1.mappers.ProductMapper;
+import org.kaspi.labmodule2project1.repositories.OutboxEventRepository;
 import org.kaspi.labmodule2project1.repositories.ProductRepository;
+import org.kaspi.labmodule2project1.services.OutboxService;
 import org.kaspi.labmodule2project1.services.ProductService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
@@ -17,29 +26,43 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
-    private final ProductMapper productMapper;
+    private final ObjectMapper objectMapper;
+    private final OutboxService outboxService;
 
     @Override
     public ProductDto getById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new ProductNotFoundException("Product not found: " + id));
 
-        return productMapper.toDto(product);
+        return ProductMapper.toDto(product);
     }
 
     @Override
     public List<ProductDto> getAll() {
         return productRepository.findAll()
                 .stream()
-                .map(productMapper::toDto)
+                .map(ProductMapper::toDto)
                 .toList();
     }
 
-    @Transactional(isolation = Isolation.READ_COMMITTED)
+    @Transactional
     public Long createProduct(ProductDto dto) {
-        Product product = productMapper.toEntity(dto);
-        //todo: save in outbox table
-        return productRepository.save(product).getId();
+        Product product = ProductMapper.toEntity(dto);
+        productRepository.save(product);
+
+        CreateDeliveryForProductRequestDto payload =
+                new CreateDeliveryForProductRequestDto(product.getId(), product.getAddress());
+
+        OutboxEvent outboxEvent = OutboxEvent.builder()
+                .aggregateType("Product")
+                .aggregateId(product.getId())
+                .eventType("ProductCreated")
+                .payload(writeJson(payload))
+                .build();
+
+        outboxService.saveOutboxEvent(outboxEvent);
+
+        return product.getId();
     }
 
     @Override
@@ -59,5 +82,13 @@ public class ProductServiceImpl implements ProductService {
             throw new ProductNotFoundException("Product not found: " + id);
         }
         productRepository.deleteById(id);
+    }
+
+    private String writeJson(Object obj) {
+        try {
+            return objectMapper.writeValueAsString(obj);
+        } catch (Exception e) {
+            throw new IllegalStateException("Cannot serialize outbox payload", e);
+        }
     }
 }
