@@ -26,6 +26,9 @@ public class Product {
     @Column(name = "price")
     BigDecimal price;
 
+    @Column(name = "address")
+    String address;
+
     @Override
     public String toString() {
         return "Product{" +
