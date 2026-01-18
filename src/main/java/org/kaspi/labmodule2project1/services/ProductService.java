@@ -3,6 +3,7 @@ package org.kaspi.labmodule2project1.services;
 import org.kaspi.labmodule2project1.domain.dto.ProductDto;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public interface ProductService {
 
@@ -10,7 +11,7 @@ public interface ProductService {
 
     List<ProductDto> getAll();
 
-    Long createProduct(ProductDto dto);
+    CompletableFuture<Long> createProduct(ProductDto dto);
 
     void update(Long id, ProductDto dto);
 

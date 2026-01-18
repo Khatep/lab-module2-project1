@@ -15,12 +15,14 @@ import org.kaspi.labmodule2project1.repositories.ProductRepository;
 import org.kaspi.labmodule2project1.services.OutboxService;
 import org.kaspi.labmodule2project1.services.ProductService;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @Service
 @RequiredArgsConstructor
@@ -46,7 +48,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Transactional
-    public Long createProduct(ProductDto dto) {
+    @Async("productExecutor")
+    public CompletableFuture<Long> createProduct(ProductDto dto) {
         Product product = ProductMapper.toEntity(dto);
         productRepository.save(product);
 
@@ -62,7 +65,7 @@ public class ProductServiceImpl implements ProductService {
 
         outboxService.saveOutboxEvent(outboxEvent);
 
-        return product.getId();
+        return CompletableFuture.completedFuture(product.getId());
     }
 
     @Override

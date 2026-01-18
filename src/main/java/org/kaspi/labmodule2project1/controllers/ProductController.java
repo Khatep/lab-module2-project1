@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 @RestController
 @RequestMapping(value = ProductController.PATH)
@@ -28,12 +29,15 @@ public class ProductController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> createProduct(@RequestBody ProductDto productDto) {
-        Long id = productService.createProduct(productDto);
-        return ResponseEntity
-                .created(URI.create(PATH + "/" + id))
-                .build();
+    public CompletableFuture<ResponseEntity<Long>> createProduct(@RequestBody ProductDto dto) {
+        return productService.createProduct(dto)
+                .thenApply(id ->
+                        ResponseEntity
+                                .created(URI.create(PATH + "/" + id))
+                                .body(id)
+                );
     }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<Void> update(
