@@ -1,19 +1,18 @@
 package org.kaspi.labmodule2project1.services;
 
 import org.kaspi.labmodule2project1.domain.dto.ProductDto;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public interface ProductService {
 
-    ProductDto getById(Long id);
+    Mono<ProductDto> getById(Long id);
 
-    List<ProductDto> getAll();
+    Flux<ProductDto> getAll();
 
-    CompletableFuture<Long> createProduct(ProductDto dto);
+    Mono<Long> createProduct(ProductDto dto);
 
-    void update(Long id, ProductDto dto);
+    Mono<Void> update(Long id, ProductDto dto);
 
-    void delete(Long id);
+    Mono<Void> delete(Long id);
 }

@@ -1,20 +1,22 @@
 package org.kaspi.labmodule2project1.services;
 
-import lombok.RequiredArgsConstructor;
 import org.kaspi.labmodule2project1.domain.models.OutboxEvent;
-import org.kaspi.labmodule2project1.repositories.OutboxEventRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
+import reactor.core.publisher.Mono;
 
 @Service
 @RequiredArgsConstructor
 public class OutboxService {
 
-    private final OutboxEventRepository outboxEventRepository;
+    @Autowired
+    private R2dbcEntityTemplate template;
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void saveOutboxEvent(OutboxEvent event) {
-        outboxEventRepository.save(event);
+    public Mono<Void> saveOutboxEvent(OutboxEvent event) {
+        return template.insert(OutboxEvent.class)
+                .using(event)
+                .then();
     }
 }

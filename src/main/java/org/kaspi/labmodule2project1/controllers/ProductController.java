@@ -5,52 +5,50 @@ import org.kaspi.labmodule2project1.domain.dto.ProductDto;
 import org.kaspi.labmodule2project1.services.ProductService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.net.URI;
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @RestController
-@RequestMapping(value = ProductController.PATH)
+@RequestMapping(ProductController.PATH)
 @RequiredArgsConstructor
 public class ProductController {
-    private final ProductService productService;
 
     protected static final String PATH = "api/v1/products";
+    private final ProductService productService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ProductDto> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(productService.getById(id));
+    public Mono<ResponseEntity<ProductDto>> getById(@PathVariable Long id) {
+        return productService.getById(id)
+                .map(ResponseEntity::ok)
+                .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductDto>> getAll() {
-        return ResponseEntity.ok(productService.getAll());
+    public Flux<ProductDto> getAll() {
+        return productService.getAll();
     }
 
     @PostMapping
-    public CompletableFuture<ResponseEntity<Long>> createProduct(@RequestBody ProductDto dto) {
+    public Mono<ResponseEntity<Long>> createProduct(@RequestBody ProductDto dto) {
         return productService.createProduct(dto)
-                .thenApply(id ->
-                        ResponseEntity
-                                .created(URI.create(PATH + "/" + id))
-                                .body(id)
+                .map(id -> ResponseEntity
+                        .created(URI.create(PATH + "/" + id))
+                        .body(id)
                 );
     }
 
-
     @PutMapping("/{id}")
-    public ResponseEntity<Void> update(
-            @PathVariable Long id,
-            @RequestBody ProductDto productDto
-    ) {
-        productService.update(id, productDto);
-        return ResponseEntity.noContent().build();
+    public Mono<ResponseEntity<Void>> update(@PathVariable Long id,
+                                             @RequestBody ProductDto dto) {
+        return productService.update(id, dto)
+                .thenReturn(ResponseEntity.noContent().build());
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        productService.delete(id);
-        return ResponseEntity.noContent().build();
+    public Mono<ResponseEntity<Void>> delete(@PathVariable Long id) {
+        return productService.delete(id)
+                .thenReturn(ResponseEntity.noContent().build());
     }
 }

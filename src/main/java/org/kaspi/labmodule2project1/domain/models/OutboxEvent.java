@@ -1,21 +1,21 @@
 package org.kaspi.labmodule2project1.domain.models;
 
-import jakarta.persistence.*;
+import io.r2dbc.postgresql.codec.Json;
 import lombok.*;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.kaspi.labmodule2project1.domain.enums.OutboxStatus;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@Entity
-@Table(name = "outbox_event")
+@Table("outbox_event")
 @Getter
 @Setter
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class OutboxEvent {
 
     @Id
@@ -27,11 +27,9 @@ public class OutboxEvent {
 
     private String eventType;
 
-    @JdbcTypeCode(SqlTypes.JSON)
-    @Column(columnDefinition = "jsonb")
-    private String payload;
+    @Column("payload")
+    private Json payload;
 
-    @Enumerated(EnumType.STRING)
     private OutboxStatus status;
 
     private int retryCount;
@@ -40,12 +38,16 @@ public class OutboxEvent {
 
     private LocalDateTime updatedAt;
 
-    @PrePersist
-    void onCreate() {
-        createdAt = LocalDateTime.now();
-        status = OutboxStatus.NEW;
-        retryCount = 0;
-        id = UUID.randomUUID();
+    public OutboxEvent(String aggregateType, Long aggregateId, String eventType, Json payload) {
+        this.id = UUID.randomUUID();
+        this.aggregateType = aggregateType;
+        this.aggregateId = aggregateId;
+        this.eventType = eventType;
+        this.payload = payload;
+        this.status = OutboxStatus.NEW;
+        this.retryCount = 0;
+        this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
     }
 
     public void markSent() {
@@ -59,4 +61,3 @@ public class OutboxEvent {
         this.updatedAt = LocalDateTime.now();
     }
 }
-

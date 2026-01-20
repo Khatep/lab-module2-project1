@@ -1,15 +1,26 @@
 package org.kaspi.labmodule2project1.clients;
 
+import lombok.RequiredArgsConstructor;
 import org.kaspi.labmodule2project1.domain.dto.request.CreateDeliveryForProductRequestDto;
-import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
-@FeignClient(name = "delivery-service", url = "${feign.clients.kaspi-lab.delivery-service}")
-public interface DeliveryServiceClient {
-    @PostMapping("/api/v1/delivery")
-    ResponseEntity<Void> createDelivery(
-            @RequestBody CreateDeliveryForProductRequestDto createDeliveryForProductRequestDto
-    );
+@Component
+@RequiredArgsConstructor
+public class DeliveryServiceClient {
+
+    private final WebClient deliveryWebClient;
+
+    public Mono<Void> createDelivery(CreateDeliveryForProductRequestDto dto) {
+        return deliveryWebClient.post()
+                .uri("/api/v1/delivery")
+                .bodyValue(dto)
+                .retrieve()
+                .onStatus(HttpStatusCode::isError,
+                        resp -> Mono.error(new RuntimeException("Delivery service error")))
+                .bodyToMono(Void.class);
+    }
+
 }

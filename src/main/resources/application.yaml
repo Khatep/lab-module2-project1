@@ -2,23 +2,20 @@ spring:
   application:
     name: lab-module2-project1
 
-  #??? .env
-  datasource:
-    url: jdbc:postgresql://localhost:5432/kaspi-lab
+  r2dbc:
+    url: r2dbc:postgresql://localhost:5432/kaspi-lab
     username: khatep
     password: postgres
-    driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
-      ddl-auto: create  #create validate
+      ddl-auto: none
     show-sql: true
     open-in-view: false
 
-feign:
-  clients:
-    kaspi-lab:
-      delivery-service: localhost:8081
+clients:
+  kaspi-lab:
+    delivery-service: http://localhost:8081
 
 app:
   security:
@@ -27,6 +24,3 @@ app:
 
 server:
   port: 8080
-  servlet:
-    context-path: /
-

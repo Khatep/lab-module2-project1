@@ -1,27 +1,23 @@
 package org.kaspi.labmodule2project1.domain.models;
 
-import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Table;
 
-@Entity
+@Table("deliveries")
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "deliveries")
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class Delivery {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     Long id;
 
-    @OneToOne
-    @JoinColumn(name = "product_id")
-    Product product;
+    Long productId; // вместо @OneToOne
 
-    @Column(name = "address")
     String address;
 }
