@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.kaspi.labmodule2project1.clients.DeliveryServiceClient;
 import org.kaspi.labmodule2project1.domain.dto.ProductDto;
 import org.kaspi.labmodule2project1.domain.dto.request.CreateDeliveryForProductRequestDto;
+import org.kaspi.labmodule2project1.domain.enums.DeliveryStatus;
 import org.kaspi.labmodule2project1.domain.exceptions.ProductNotFoundException;
 import org.kaspi.labmodule2project1.domain.models.Product;
 import org.kaspi.labmodule2project1.mappers.ProductMapper;
@@ -45,7 +46,8 @@ public class ProductServiceImpl implements ProductService {
                                 .createDelivery(
                                         new CreateDeliveryForProductRequestDto(
                                                 savedProduct.getId(),
-                                                product.getAddress()
+                                                product.getAddress(),
+                                                DeliveryStatus.CREATED
                                         )
                                 )
                                 .thenReturn(savedProduct.getId())

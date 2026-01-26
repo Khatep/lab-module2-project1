@@ -22,5 +22,5 @@ public class Delivery {
 
     String address;
 
-    DeliveryStatus deliveryStatus;
+    DeliveryStatus status;
 }
