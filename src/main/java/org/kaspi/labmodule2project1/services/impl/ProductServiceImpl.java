@@ -1,23 +1,18 @@
 package org.kaspi.labmodule2project1.services.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.r2dbc.postgresql.codec.Json;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.kaspi.labmodule2project1.clients.DeliveryServiceClient;
 import org.kaspi.labmodule2project1.domain.dto.ProductDto;
 import org.kaspi.labmodule2project1.domain.dto.request.CreateDeliveryForProductRequestDto;
 import org.kaspi.labmodule2project1.domain.exceptions.ProductNotFoundException;
-import org.kaspi.labmodule2project1.domain.models.OutboxEvent;
 import org.kaspi.labmodule2project1.domain.models.Product;
 import org.kaspi.labmodule2project1.mappers.ProductMapper;
 import org.kaspi.labmodule2project1.repositories.ProductRepository;
-import org.kaspi.labmodule2project1.services.OutboxService;
 import org.kaspi.labmodule2project1.services.ProductService;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -25,8 +20,7 @@ import java.util.UUID;
 public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
-    private final ObjectMapper objectMapper;
-    private final OutboxService outboxService;
+    private final DeliveryServiceClient deliveryServiceClient;
 
     @Override
     public Mono<ProductDto> getById(Long id) {
@@ -46,23 +40,16 @@ public class ProductServiceImpl implements ProductService {
         Product product = ProductMapper.toEntity(dto);
 
         return productRepository.save(product)
-                .flatMap(savedProduct -> {
-                    // Создаём payload для Outbox
-                    CreateDeliveryForProductRequestDto payload =
-                            new CreateDeliveryForProductRequestDto(savedProduct.getId(), savedProduct.getAddress());
-
-                    OutboxEvent outboxEvent = OutboxEvent.builder()
-                            .id(UUID.randomUUID())
-                            .aggregateType("Product")
-                            .aggregateId(savedProduct.getId())
-                            .eventType("ProductCreated")
-                            .payload(Json.of(writeJson(payload)))
-                            .build();
-
-                    // Сохраняем в outbox
-                    return outboxService.saveOutboxEvent(outboxEvent)
-                            .thenReturn(savedProduct.getId());
-                });
+                .flatMap(savedProduct ->
+                        deliveryServiceClient
+                                .createDelivery(
+                                        new CreateDeliveryForProductRequestDto(
+                                                savedProduct.getId(),
+                                                product.getAddress()
+                                        )
+                                )
+                                .thenReturn(savedProduct.getId())
+                );
     }
 
     @Override
@@ -85,13 +72,5 @@ public class ProductServiceImpl implements ProductService {
                     }
                     return productRepository.deleteById(id);
                 });
-    }
-
-    private String writeJson(Object obj) {
-        try {
-            return objectMapper.writeValueAsString(obj);
-        } catch (Exception e) {
-            throw new IllegalStateException("Cannot serialize outbox payload", e);
-        }
     }
 }
