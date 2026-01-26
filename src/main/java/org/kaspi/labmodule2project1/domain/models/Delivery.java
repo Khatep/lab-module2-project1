@@ -2,6 +2,7 @@ package org.kaspi.labmodule2project1.domain.models;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.kaspi.labmodule2project1.domain.enums.DeliveryStatus;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.relational.core.mapping.Table;
 
@@ -20,4 +21,6 @@ public class Delivery {
     Long productId; // вместо @OneToOne
 
     String address;
+
+    DeliveryStatus deliveryStatus;
 }
